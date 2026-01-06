@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 ### 3. Configuration
 
-Create a `.env` file in the `flask_app` directory to store your configuration secrets. You can use the provided `.env-example` as a template.
+Create a `.env` file in the directory to store your configuration secrets. You can use the provided `.env-example` as a template.
 
 **Required Environment Variables:**
 
