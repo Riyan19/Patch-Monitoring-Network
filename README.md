@@ -11,14 +11,14 @@ Before running the application, ensure you have the following installed:
 
 ## Installation & Setup
 
-All application code is located in the `flask_app` directory.
+All application code is located in the directory.
 
 ### 1. Set up the Environment
 
 Navigate to the directory and create a virtual environment:
 
 ```bash
-cd flask_app
+cd Patch-Monitoring-Network
 
 # Create a virtual environment
 python -m venv venv
