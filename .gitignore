@@ -1,6 +1,6 @@
 .env
 /node_modules
 /vendor
-/venv
+.venv/
 *.log
 .DS_Store
