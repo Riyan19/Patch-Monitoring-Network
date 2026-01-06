@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 border-b border-gray-700 pb-4">
+        <i class="fa-solid fa-chart-line text-blue-500"></i> Vulnerability Monitoring
+    </h2>
+
+    {% if not alerts %}
+    <div class="bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-xl text-center">
+        <i class="fa-solid fa-shield-virus text-6xl text-gray-600 mb-4 block"></i>
+        <h3 class="text-xl font-semibold text-white mb-2">No Vulnerabilities Detected</h3>
+        <p class="text-gray-400">Your systems appear to be secure based on the current inventory.</p>
+    </div>
+    {% else %}
+    <div class="grid grid-cols-1 gap-6">
+        {% for alert in alerts %}
+        <div
+            class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden hover:border-gray-600 transition">
+            <div class="px-6 py-4 bg-gray-800/50 border-b border-gray-700 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    {% if alert.severity == 'HIGH' or alert.severity == 'CRITICAL' %}
+                    <i class="fa-solid fa-circle-exclamation text-red-500 text-xl"></i>
+                    {% else %}
+                    <i class="fa-solid fa-triangle-exclamation text-yellow-500 text-xl"></i>
+                    {% endif %}
+                    <h3 class="text-lg font-bold text-white tracking-wide">{{ alert.device.hostname }}</h3>
+                </div>
+                <span class="text-sm font-mono text-gray-500 bg-gray-900 px-2 py-1 rounded">{{ alert.device.cpe
+                    }}</span>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                        <span class="inline-block px-2 py-1 rounded text-xs font-bold uppercase mb-2
+                                {% if alert.severity == 'HIGH' or alert.severity == 'CRITICAL' %} bg-red-900/50 text-red-200 border border-red-800
+                                {% else %} bg-yellow-900/50 text-yellow-200 border border-yellow-800 {% endif %}">
+                            {{ alert.severity }}
+                        </span>
+                        <span class="text-gray-400 text-sm ml-2 font-mono">{{ alert.cve_id }}</span>
+                    </div>
+                    <span
+                        class="text-2xl font-bold {% if alert.severity == 'HIGH' or alert.severity == 'CRITICAL' %}text-red-400{% else %}text-yellow-400{% endif %}">
+                        {{ alert.score }}
+                    </span>
+                </div>
+                <p class="text-gray-300 text-sm leading-relaxed mb-4">{{ alert.description }}</p>
+                <a href="https://nvd.nist.gov/vuln/detail/{{ alert.cve_id }}" target="_blank"
+                    class="text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center gap-1 w-max">
+                    View details on NIST <i class="fa-solid fa-external-link-alt text-xs"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

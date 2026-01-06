@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for category, message in messages %}
+        <div class="p-4 rounded-lg flex items-center gap-3 shadow-md
+                        {% if category == 'success' %} bg-green-900/50 border border-green-700 text-green-200
+                        {% elif category == 'error' %} bg-red-900/50 border border-red-700 text-red-200
+                        {% else %} bg-gray-800 border border-gray-700 {% endif %}">
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-700 mb-6">
+        <button onclick="switchTab('list')" id="tab-list"
+            class="px-6 py-3 border-b-2 border-{{ navbar_color }}-500 text-{{ navbar_color }}-500 font-bold focus:outline-none transition">
+            <i class="fa-solid fa-users"></i> All Users
+        </button>
+        <button onclick="switchTab('create')" id="tab-create"
+            class="px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-gray-200 font-medium focus:outline-none transition">
+            <i class="fa-solid fa-user-plus"></i> Create User
+        </button>
+        <button onclick="switchTab('settings')" id="tab-settings"
+            class="px-6 py-3 border-b-2 border-transparent text-gray-400 hover:text-gray-200 font-medium focus:outline-none transition">
+            <i class="fa-solid fa-gears"></i> Global Settings
+        </button>
+    </div>
+
+    <!-- User List Tab -->
+    <div id="content-list">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-700 bg-gray-800/50">
+                <h2 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-users text-gray-400"></i> Existing Users
+                </h2>
+            </div>
+            <table class="w-full text-left">
+                <thead class="bg-gray-700/50 text-gray-400 text-sm uppercase">
+                    <tr>
+                        <th class="px-6 py-4">Username</th>
+                        <th class="px-6 py-4">Role</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for user in users %}
+                    <tr class="hover:bg-gray-700/30">
+                        <td class="px-6 py-4 text-white font-medium">{{ user.username }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded text-xs font-bold uppercase
+                                    {% if user.role == 'admin' %} bg-purple-900/50 text-purple-200 border border-purple-800
+                                    {% else %} bg-gray-700 text-gray-300 border border-gray-600 {% endif %}">
+                                {{ user.role }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right flex justify-end gap-2">
+                            <button onclick="openResetModal('{{ user.id }}', '{{ user.username }}')"
+                                class="text-yellow-400 hover:text-yellow-300 transition p-2 hover:bg-yellow-400/10 rounded-lg"
+                                title="Reset Password">
+                                <i class="fa-solid fa-key"></i>
+                            </button>
+                            {% if user.username != 'admin' and user.id != current_user.id %}
+                            <a href="/admin/users/delete/{{ user.id }}" onclick="return confirm('Delete this user?')"
+                                class="text-red-400 hover:text-red-300 transition p-2 hover:bg-red-400/10 rounded-lg"
+                                title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create User Tab -->
+    <div id="content-create" class="hidden">
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-xl mb-8">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-gray-400"></i> Add New User
+            </h2>
+            <form action="/admin/users/add" method="POST" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="md:col-span-4">
+                    <input type="text" name="username" placeholder="Username" required
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="md:col-span-4">
+                    <input type="password" name="password" placeholder="Password" required
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <select name="role"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="readonly">Read Only</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition shadow-lg">
+                        Add User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="content-settings" class="hidden">
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-xl mb-8">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-brush text-gray-400"></i> Application Appearance
+            </h2>
+            <form action="/admin/settings" method="POST" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Application Name</label>
+                    <input type="text" name="app_name" value="{{ app_name }}"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Navbar Icon</label>
+                        <select name="app_icon"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none">
+                            <option value="fa-shield-halved" {% if app_icon=='fa-shield-halved' %}selected{% endif %}>
+                                Shield (Default)</option>
+                            <option value="fa-radar" {% if app_icon=='fa-radar' %}selected{% endif %}>Radar</option>
+                            <option value="fa-lock" {% if app_icon=='fa-lock' %}selected{% endif %}>Lock</option>
+                            <option value="fa-network-wired" {% if app_icon=='fa-network-wired' %}selected{% endif %}>
+                                Network</option>
+                            <option value="fa-server" {% if app_icon=='fa-server' %}selected{% endif %}>Server</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Theme Color</label>
+                        <select name="navbar_color"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none">
+                            <option value="blue" {% if navbar_color=='blue' %}selected{% endif %}>Blue (Default)
+                            </option>
+                            <option value="emerald" {% if navbar_color=='emerald' %}selected{% endif %}>Emerald / Green
+                            </option>
+                            <option value="purple" {% if navbar_color=='purple' %}selected{% endif %}>Purple</option>
+                            <option value="red" {% if navbar_color=='red' %}selected{% endif %}>Red</option>
+                            <option value="indigo" {% if navbar_color=='indigo' %}selected{% endif %}>Indigo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-gray-700">
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg transition shadow-lg">
+                        Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Reset Password Modal -->
+<div id="reset-modal"
+    class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-2xl w-full max-w-sm transform transition-all">
+        <form id="reset-form" method="POST">
+            <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-yellow-500"></i> Reset Password
+                </h3>
+                <button type="button" onclick="document.getElementById('reset-modal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-gray-400 text-sm">Resetting password for <span id="reset-username"
+                        class="text-white font-bold"></span>.</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">New Password</label>
+                    <input type="password" name="new_password" required
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-900/50 rounded-b-xl border-t border-gray-700 flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('reset-modal').classList.add('hidden')"
+                    class="px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white font-medium transition shadow-lg">Reset</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function switchTab(tab) {
+        const listContent = document.getElementById('content-list');
+        const createContent = document.getElementById('content-create');
+        const settingsContent = document.getElementById('content-settings');
+
+        const listTab = document.getElementById('tab-list');
+        const createTab = document.getElementById('tab-create');
+        const settingsTab = document.getElementById('tab-settings');
+
+        // Hide all
+        listContent.classList.add('hidden');
+        createContent.classList.add('hidden');
+        settingsContent.classList.add('hidden');
+
+        // Reset tabs
+        [listTab, createTab, settingsTab].forEach(t => {
+            t.classList.remove('border-{{ navbar_color }}-500', 'text-{{ navbar_color }}-500');
+            t.classList.add('border-transparent', 'text-gray-400');
+        });
+
+        // Show selected
+        document.getElementById(`content-${tab}`).classList.remove('hidden');
+        const activeTab = document.getElementById(`tab-${tab}`);
+        activeTab.classList.remove('border-transparent', 'text-gray-400');
+        activeTab.classList.add('border-{{ navbar_color }}-500', 'text-{{ navbar_color }}-500');
+    }
+
+    function openResetModal(id, username) {
+        document.getElementById('reset-form').action = `/admin/users/reset-password/${id}`;
+        document.getElementById('reset-username').innerText = username;
+        document.getElementById('reset-modal').classList.remove('hidden');
+    }
+</script>
+{% endblock %}

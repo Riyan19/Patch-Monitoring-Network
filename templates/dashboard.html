@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for category, message in messages %}
+        <div class="p-4 rounded-lg flex items-center gap-3 shadow-md
+                        {% if category == 'success' %} bg-green-900/50 border border-green-700 text-green-200
+                        {% elif category == 'error' %} bg-red-900/50 border border-red-700 text-red-200
+                        {% elif category == 'warning' %} bg-yellow-900/50 border border-yellow-700 text-yellow-200
+                        {% else %} bg-gray-800 border border-gray-700 {% endif %}">
+
+            {% if category == 'success' %}<i class="fa-solid fa-check-circle"></i>
+            {% elif category == 'error' %}<i class="fa-solid fa-circle-exclamation"></i>
+            {% else %}<i class="fa-solid fa-info-circle"></i>{% endif %}
+
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Add Device Form (Admin Only) -->
+    {% if current_user.role == 'admin' %}
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-xl mb-8">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle text-gray-400"></i> Add New Device
+        </h2>
+        <form action="/add" method="POST" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div class="md:col-span-4">
+                <input type="text" name="hostname" placeholder="Hostname (e.g., Core-Switch-01)"
+                    class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none transition"
+                    required>
+            </div>
+            <div class="md:col-span-6">
+                <input type="text" name="cpe" placeholder="CPE String (e.g., cpe:2.3:o:cisco:ios_xe:16.9.3)"
+                    class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none transition font-mono text-sm"
+                    required>
+            </div>
+            <div class="md:col-span-2">
+                <button type="submit"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition shadow-lg flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-save"></i> Save
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Inventory Table -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-700 bg-gray-800/50 flex justify-between items-center">
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-server text-gray-400"></i> Device Inventory
+            </h2>
+            <span class="bg-gray-700 text-xs px-2 py-1 rounded-full text-gray-300">{{ devices|length }}
+                Devices</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-700/50 text-gray-400 text-sm uppercase tracking-wider">
+                        <th class="px-6 py-4 font-medium">Hostname</th>
+                        <th class="px-6 py-4 font-medium">CPE String</th>
+                        <th class="px-6 py-4 font-medium">Last Checked</th>
+                        <th class="px-6 py-4 font-medium text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for device in devices %}
+                    <tr class="hover:bg-gray-700/30 transition duration-150">
+                        <td class="px-6 py-4 font-medium text-white">{{ device.hostname }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-400 font-mono">{{ device.cpe }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-400">
+                            {% if device.last_checked %}
+                            {{ device.last_checked.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+                            {% else %}
+                            <span class="text-gray-600">Never</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right flex justify-end gap-2">
+                            {% if current_user.role == 'admin' %}
+                            <button
+                                onclick="openEditModal('{{ device.id }}', '{{ device.hostname }}', '{{ device.cpe }}')"
+                                class="text-blue-400 hover:text-blue-300 transition p-2 hover:bg-blue-400/10 rounded-lg"
+                                title="Edit">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <a href="/delete/{{ device.id }}"
+                                class="text-red-400 hover:text-red-300 transition p-2 hover:bg-red-400/10 rounded-lg"
+                                title="Delete" onclick="return confirm('Are you sure?')">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                            {% else %}
+                            <span class="text-gray-600 text-xs italic">Read Only</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fa-solid fa-box-open text-4xl mb-3 block opacity-50"></i>
+                            No devices found. Add one above to get started.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Edit Device Modal -->
+<div id="edit-modal"
+    class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-2xl w-full max-w-lg transform transition-all">
+        <form id="edit-form" method="POST">
+            <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-{{ navbar_color }}-500"></i> Edit Device
+                </h3>
+                <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Hostname</label>
+                    <input type="text" id="edit-hostname" name="hostname" required
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">CPE String</label>
+                    <input type="text" id="edit-cpe" name="cpe" required
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none font-mono text-sm">
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-900/50 rounded-b-xl border-t border-gray-700 flex justify-end gap-3">
+                <button type="button" onclick="closeEditModal()"
+                    class="px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 rounded-lg bg-{{ navbar_color }}-600 hover:bg-{{ navbar_color }}-700 text-white font-medium transition shadow-lg">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openEditModal(id, hostname, cpe) {
+        document.getElementById('edit-form').action = `/edit/${id}`;
+        document.getElementById('edit-hostname').value = hostname;
+        document.getElementById('edit-cpe').value = cpe;
+        document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-modal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

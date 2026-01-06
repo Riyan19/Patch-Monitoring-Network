@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Patch Monitor{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <!-- Dynamic Navbar -->
+    <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid {{ app_icon }} text-{{ navbar_color }}-500 text-2xl"></i>
+            <h1 class="text-xl font-bold tracking-wide">{{ app_name }}</h1>
+        </div>
+        <div class="flex gap-4 items-center">
+            <a href="/"
+                class="text-gray-300 hover:text-white font-medium transition flex items-center gap-2 {% if request.path == '/' %}text-{{ navbar_color }}-400 border-b-2 border-{{ navbar_color }}-400{% endif %}">
+                <i class="fa-solid fa-server"></i> Inventory
+            </a>
+            <a href="/monitoring"
+                class="text-gray-300 hover:text-white font-medium transition flex items-center gap-2 {% if request.path == '/monitoring' %}text-{{ navbar_color }}-400 border-b-2 border-{{ navbar_color }}-400{% endif %}">
+                <i class="fa-solid fa-chart-line"></i> Monitoring
+            </a>
+
+            {% if current_user.role == 'admin' %}
+            <a href="/admin/users"
+                class="text-gray-300 hover:text-white font-medium transition flex items-center gap-2 {% if '/admin' in request.path %}text-{{ navbar_color }}-400 border-b-2 border-{{ navbar_color }}-400{% endif %}">
+                <i class="fa-solid fa-users"></i> Users
+            </a>
+            <a href="/scan-now"
+                class="bg-{{ navbar_color }}-600 hover:bg-{{ navbar_color }}-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                <i class="fa-solid fa-radar"></i> Scan Now
+            </a>
+            {% endif %}
+
+            <div class="border-l border-gray-600 h-6 mx-2"></div>
+
+            <button onclick="document.getElementById('profile-modal').classList.remove('hidden')"
+                class="text-gray-300 hover:text-white font-medium transition flex items-center gap-2"
+                title="My Profile">
+                <i class="fa-solid fa-user-circle text-lg"></i>
+            </button>
+
+            <a href="/logout"
+                class="text-red-400 hover:text-red-300 font-medium transition flex items-center gap-2 text-sm"
+                title="Logout">
+                <i class="fa-solid fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Profile Modal (Global) -->
+    <div id="profile-modal"
+        class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-2xl w-full max-w-sm transform transition-all">
+            <form action="/change-password" method="POST">
+                <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-lock text-{{ navbar_color }}-500"></i> Change Password
+                    </h3>
+                    <button type="button" onclick="document.getElementById('profile-modal').classList.add('hidden')"
+                        class="text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Current Password</label>
+                        <input type="password" name="current_password" required
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">New Password</label>
+                        <input type="password" name="new_password" required
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Confirm New Password</label>
+                        <input type="password" name="confirm_password" required
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-{{ navbar_color }}-500 outline-none">
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-900/50 rounded-b-xl border-t border-gray-700 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('profile-modal').classList.add('hidden')"
+                        class="px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-{{ navbar_color }}-600 hover:bg-{{ navbar_color }}-700 text-white font-medium transition shadow-lg">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

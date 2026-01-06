@@ -1,0 +1,8 @@
+flask
+flask_sqlalchemy
+nvdlib
+requests
+python-dotenv
+gunicorn
+flask-login
+werkzeug

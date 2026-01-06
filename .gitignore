@@ -1,3 +1,5 @@
-/backend
-/flask_app.zip
-/frontend
+.env
+/node_modules
+/vendor
+*.log
+.DS_Store
